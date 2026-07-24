@@ -2,50 +2,68 @@
 
 declare(strict_types=1);
 
+namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature\Repositories;
+
 use HorizonDbDriver\HorizonDbDriver\Repositories\DatabaseTagRepository;
+use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
-it('stores and retrieves job ids by tag', function () {
-    $tags = app(DatabaseTagRepository::class);
+class DatabaseTagRepositoryTest extends TestCase
+{
+    use RefreshDatabase;
 
-    $tags->add('job-1', ['emails', 'reports']);
-    $tags->add('job-2', ['emails']);
+    #[Test]
+    public function it_stores_and_retrieves_job_ids_by_tag(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
 
-    expect($tags->jobs('emails'))->toEqualCanonicalizing(['job-1', 'job-2']);
-    expect($tags->jobs('reports'))->toBe(['job-1']);
-    expect($tags->count('emails'))->toBe(2);
-});
+        $tags->add('job-1', ['emails', 'reports']);
+        $tags->add('job-2', ['emails']);
 
-it('monitors and stops monitoring tags', function () {
-    $tags = app(DatabaseTagRepository::class);
+        $this->assertEqualsCanonicalizing(['job-1', 'job-2'], $tags->jobs('emails'));
+        $this->assertSame(['job-1'], $tags->jobs('reports'));
+        $this->assertSame(2, $tags->count('emails'));
+    }
 
-    $tags->monitor('emails');
+    #[Test]
+    public function it_monitors_and_stops_monitoring_tags(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
 
-    expect($tags->monitoring())->toBe(['emails']);
-    expect($tags->monitored(['emails', 'reports']))->toBe(['emails']);
+        $tags->monitor('emails');
 
-    $tags->stopMonitoring('emails');
+        $this->assertSame(['emails'], $tags->monitoring());
+        $this->assertSame(['emails'], $tags->monitored(['emails', 'reports']));
 
-    expect($tags->monitoring())->toBe([]);
-});
+        $tags->stopMonitoring('emails');
 
-it('forgets a tag entirely', function () {
-    $tags = app(DatabaseTagRepository::class);
+        $this->assertSame([], $tags->monitoring());
+    }
 
-    $tags->add('job-1', ['emails']);
-    $tags->forget('emails');
+    #[Test]
+    public function it_forgets_a_tag_entirely(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
 
-    expect($tags->jobs('emails'))->toBe([]);
-});
+        $tags->add('job-1', ['emails']);
+        $tags->forget('emails');
 
-it('removes expired temporary tags from storage but keeps permanent ones', function () {
-    $tags = app(DatabaseTagRepository::class);
+        $this->assertSame([], $tags->jobs('emails'));
+    }
 
-    $tags->add('job-1', ['permanent']);
-    $tags->addTemporary(-1, 'job-2', ['expired']);
+    #[Test]
+    public function it_removes_expired_temporary_tags_from_storage_but_keeps_permanent_ones(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
 
-    $tags->trimExpired();
+        $tags->add('job-1', ['permanent']);
+        $tags->addTemporary(-1, 'job-2', ['expired']);
 
-    expect(DB::table('horizon_tags')->where('tag', 'permanent')->exists())->toBeTrue();
-    expect(DB::table('horizon_tags')->where('tag', 'expired')->exists())->toBeFalse();
-});
+        $tags->trimExpired();
+
+        $this->assertTrue(DB::table('horizon_tags')->where('tag', 'permanent')->exists());
+        $this->assertFalse(DB::table('horizon_tags')->where('tag', 'expired')->exists());
+    }
+}

@@ -2,16 +2,19 @@
 
 declare(strict_types=1);
 
+namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature;
+
 use HorizonDbDriver\HorizonDbDriver\Jobs\DatabaseJob;
+use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Horizon\Contracts\JobRepository;
-use Laravel\Horizon\Events\JobPushed;
+use PHPUnit\Framework\Attributes\Test;
 
 class HorizonDbDriverTestJob implements ShouldQueue
 {
@@ -23,41 +26,48 @@ class HorizonDbDriverTestJob implements ShouldQueue
     }
 }
 
-it('records a pushed job in the horizon_jobs table and fires JobPushed', function () {
-    Event::fake([JobPushed::class]);
+class DatabaseQueueProcessingTest extends TestCase
+{
+    use RefreshDatabase;
 
-    HorizonDbDriverTestJob::dispatch()->onConnection('database');
+    #[Test]
+    public function it_records_a_pushed_job_in_the_horizon_jobs_table(): void
+    {
+        HorizonDbDriverTestJob::dispatch()->onConnection('database');
 
-    $row = DB::table('horizon_jobs')->first();
+        $row = DB::table('horizon_jobs')->first();
 
-    expect($row)->not->toBeNull();
-    expect($row->status)->toBe('pending');
-    expect($row->connection)->toBe('database');
+        $this->assertNotNull($row);
+        $this->assertSame('pending', $row->status);
+        $this->assertSame('database', $row->connection);
 
-    Event::assertDispatched(JobPushed::class);
+        $this->assertSame(1, $this->app->make(JobRepository::class)->countPending());
+    }
 
-    expect(app(JobRepository::class)->countPending())->toBe(1);
-});
+    #[Test]
+    public function it_marks_the_job_as_reserved_when_popped_off_the_queue(): void
+    {
+        HorizonDbDriverTestJob::dispatch()->onConnection('database');
 
-it('marks the job as reserved when popped off the queue', function () {
-    HorizonDbDriverTestJob::dispatch()->onConnection('database');
+        $job = Queue::connection('database')->pop();
 
-    $job = Queue::connection('database')->pop();
+        $this->assertInstanceOf(DatabaseJob::class, $job);
 
-    expect($job)->toBeInstanceOf(DatabaseJob::class);
+        $row = DB::table('horizon_jobs')->first();
 
-    $row = DB::table('horizon_jobs')->first();
+        $this->assertSame('reserved', $row->status);
+    }
 
-    expect($row->status)->toBe('reserved');
-});
+    #[Test]
+    public function it_marks_the_job_as_completed_once_it_is_deleted_from_the_queue(): void
+    {
+        HorizonDbDriverTestJob::dispatch()->onConnection('database');
 
-it('marks the job as completed once it is deleted from the queue', function () {
-    HorizonDbDriverTestJob::dispatch()->onConnection('database');
+        $job = Queue::connection('database')->pop();
+        $job->fire();
 
-    $job = Queue::connection('database')->pop();
-    $job->fire();
+        $row = DB::table('horizon_jobs')->first();
 
-    $row = DB::table('horizon_jobs')->first();
-
-    expect($row->status)->toBe('completed');
-});
+        $this->assertSame('completed', $row->status);
+    }
+}

@@ -2,63 +2,79 @@
 
 declare(strict_types=1);
 
+namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature\Repositories;
+
 use HorizonDbDriver\HorizonDbDriver\Repositories\DatabaseSupervisorRepository;
+use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\Test;
 
-it('stores and retrieves supervisor information', function () {
-    DB::table('horizon_supervisors')->insert([
-        'name' => 'horizon-1:supervisor-1',
-        'master' => 'horizon-1',
-        'pid' => 123,
-        'status' => 'running',
-        'processes' => json_encode(['redis:default' => 1]),
-        'options' => json_encode(['timeout' => 60]),
-        'expires_at' => now()->addSeconds(30)->getTimestamp(),
-        'updated_at' => now()->getTimestamp(),
-    ]);
+class DatabaseSupervisorRepositoryTest extends TestCase
+{
+    use RefreshDatabase;
 
-    $supervisors = app(DatabaseSupervisorRepository::class);
+    #[Test]
+    public function it_stores_and_retrieves_supervisor_information(): void
+    {
+        DB::table('horizon_supervisors')->insert([
+            'name' => 'horizon-1:supervisor-1',
+            'master' => 'horizon-1',
+            'pid' => 123,
+            'status' => 'running',
+            'processes' => json_encode(['redis:default' => 1]),
+            'options' => json_encode(['timeout' => 60]),
+            'expires_at' => now()->addSeconds(30)->getTimestamp(),
+            'updated_at' => now()->getTimestamp(),
+        ]);
 
-    expect($supervisors->names())->toBe(['horizon-1:supervisor-1']);
+        $supervisors = $this->app->make(DatabaseSupervisorRepository::class);
 
-    $found = $supervisors->find('horizon-1:supervisor-1');
+        $this->assertSame(['horizon-1:supervisor-1'], $supervisors->names());
 
-    expect($found->status)->toBe('running');
-    expect($found->processes)->toBe(['redis:default' => 1]);
-});
+        $found = $supervisors->find('horizon-1:supervisor-1');
 
-it('removes expired supervisors from storage', function () {
-    DB::table('horizon_supervisors')->insert([
-        'name' => 'horizon-1:supervisor-1',
-        'master' => 'horizon-1',
-        'pid' => 123,
-        'status' => 'running',
-        'processes' => json_encode([]),
-        'options' => json_encode([]),
-        'expires_at' => now()->subSecond()->getTimestamp(),
-        'updated_at' => now()->getTimestamp(),
-    ]);
+        $this->assertSame('running', $found->status);
+        $this->assertSame(['redis:default' => 1], $found->processes);
+    }
 
-    $supervisors = app(DatabaseSupervisorRepository::class);
-    $supervisors->flushExpired();
+    #[Test]
+    public function it_removes_expired_supervisors_from_storage(): void
+    {
+        DB::table('horizon_supervisors')->insert([
+            'name' => 'horizon-1:supervisor-1',
+            'master' => 'horizon-1',
+            'pid' => 123,
+            'status' => 'running',
+            'processes' => json_encode([]),
+            'options' => json_encode([]),
+            'expires_at' => now()->subSecond()->getTimestamp(),
+            'updated_at' => now()->getTimestamp(),
+        ]);
 
-    expect(DB::table('horizon_supervisors')->exists())->toBeFalse();
-});
+        $supervisors = $this->app->make(DatabaseSupervisorRepository::class);
+        $supervisors->flushExpired();
 
-it('forgets a supervisor by name', function () {
-    DB::table('horizon_supervisors')->insert([
-        'name' => 'horizon-1:supervisor-1',
-        'master' => 'horizon-1',
-        'pid' => 123,
-        'status' => 'running',
-        'processes' => json_encode([]),
-        'options' => json_encode([]),
-        'expires_at' => now()->addSeconds(30)->getTimestamp(),
-        'updated_at' => now()->getTimestamp(),
-    ]);
+        $this->assertFalse(DB::table('horizon_supervisors')->exists());
+    }
 
-    $supervisors = app(DatabaseSupervisorRepository::class);
-    $supervisors->forget('horizon-1:supervisor-1');
+    #[Test]
+    public function it_forgets_a_supervisor_by_name(): void
+    {
+        DB::table('horizon_supervisors')->insert([
+            'name' => 'horizon-1:supervisor-1',
+            'master' => 'horizon-1',
+            'pid' => 123,
+            'status' => 'running',
+            'processes' => json_encode([]),
+            'options' => json_encode([]),
+            'expires_at' => now()->addSeconds(30)->getTimestamp(),
+            'updated_at' => now()->getTimestamp(),
+        ]);
 
-    expect(DB::table('horizon_supervisors')->exists())->toBeFalse();
-});
+        $supervisors = $this->app->make(DatabaseSupervisorRepository::class);
+        $supervisors->forget('horizon-1:supervisor-1');
+
+        $this->assertFalse(DB::table('horizon_supervisors')->exists());
+    }
+}

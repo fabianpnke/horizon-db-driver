@@ -15,7 +15,7 @@ This repository is a Laravel package. Keep the package focused, idiomatic, and e
 - Full validation: `composer test`
 - Formatting check: `composer lint:check`
 - Static analysis: `composer analyse`
-- Pest tests: `composer test:unit`
+- Tests: `composer test:unit` (plain PHPUnit, mirrors laravel/horizon's own CI so it can run across its full PHP 8.0-8.5 / Laravel 9-13 matrix; Pest is only used locally for `composer test:types` and `composer test:arch`)
 - Workbench build: `composer build`
 - Workbench server: `composer serve`
 

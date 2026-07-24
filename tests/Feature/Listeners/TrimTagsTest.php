@@ -2,37 +2,51 @@
 
 declare(strict_types=1);
 
+namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature\Listeners;
+
 use Carbon\CarbonImmutable;
 use HorizonDbDriver\HorizonDbDriver\Listeners\TrimTags;
 use HorizonDbDriver\HorizonDbDriver\Repositories\DatabaseTagRepository;
+use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Horizon\Events\MasterSupervisorLooped;
 use Laravel\Horizon\MasterSupervisor;
+use PHPUnit\Framework\Attributes\Test;
 
-it('trims expired tags once the configured frequency has elapsed', function () {
-    $tags = app(DatabaseTagRepository::class);
-    $tags->add('job-1', ['expired-tag']);
+class TrimTagsTest extends TestCase
+{
+    use RefreshDatabase;
 
-    DB::table('horizon_tags')->where('tag', 'expired-tag')->update(['expires_at' => now()->subMinute()->getTimestamp()]);
+    #[Test]
+    public function it_trims_expired_tags_once_the_configured_frequency_has_elapsed(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
+        $tags->add('job-1', ['expired-tag']);
 
-    $listener = app(TrimTags::class);
-    $listener->lastTrimmed = CarbonImmutable::now()->subMinutes(10);
+        DB::table('horizon_tags')->where('tag', 'expired-tag')->update(['expires_at' => now()->subMinute()->getTimestamp()]);
 
-    $listener->handle(new MasterSupervisorLooped(new MasterSupervisor));
+        $listener = $this->app->make(TrimTags::class);
+        $listener->lastTrimmed = CarbonImmutable::now()->subMinutes(10);
 
-    expect(DB::table('horizon_tags')->where('tag', 'expired-tag')->exists())->toBeFalse();
-});
+        $listener->handle(new MasterSupervisorLooped(new MasterSupervisor));
 
-it('does not trim again before the configured frequency has elapsed', function () {
-    $tags = app(DatabaseTagRepository::class);
-    $tags->add('job-1', ['expired-tag']);
+        $this->assertFalse(DB::table('horizon_tags')->where('tag', 'expired-tag')->exists());
+    }
 
-    DB::table('horizon_tags')->where('tag', 'expired-tag')->update(['expires_at' => now()->subMinute()->getTimestamp()]);
+    #[Test]
+    public function it_does_not_trim_again_before_the_configured_frequency_has_elapsed(): void
+    {
+        $tags = $this->app->make(DatabaseTagRepository::class);
+        $tags->add('job-1', ['expired-tag']);
 
-    $listener = app(TrimTags::class);
-    $listener->lastTrimmed = CarbonImmutable::now();
+        DB::table('horizon_tags')->where('tag', 'expired-tag')->update(['expires_at' => now()->subMinute()->getTimestamp()]);
 
-    $listener->handle(new MasterSupervisorLooped(new MasterSupervisor));
+        $listener = $this->app->make(TrimTags::class);
+        $listener->lastTrimmed = CarbonImmutable::now();
 
-    expect(DB::table('horizon_tags')->where('tag', 'expired-tag')->exists())->toBeTrue();
-});
+        $listener->handle(new MasterSupervisorLooped(new MasterSupervisor));
+
+        $this->assertTrue(DB::table('horizon_tags')->where('tag', 'expired-tag')->exists());
+    }
+}

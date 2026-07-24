@@ -2,42 +2,60 @@
 
 declare(strict_types=1);
 
+namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature;
+
+use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Horizon\Lock;
+use PHPUnit\Framework\Attributes\Test;
 
-it('acquires and releases a lock', function () {
-    $lock = app(Lock::class);
+class DatabaseLockTest extends TestCase
+{
+    use RefreshDatabase;
 
-    expect($lock->get('horizon:test-lock'))->toBeTrue();
-    expect($lock->exists('horizon:test-lock'))->toBeTrue();
+    #[Test]
+    public function it_acquires_and_releases_a_lock(): void
+    {
+        $lock = $this->app->make(Lock::class);
 
-    $lock->release('horizon:test-lock');
+        $this->assertTrue($lock->get('horizon:test-lock'));
+        $this->assertTrue($lock->exists('horizon:test-lock'));
 
-    expect($lock->exists('horizon:test-lock'))->toBeFalse();
-});
+        $lock->release('horizon:test-lock');
 
-it('does not grant a lock that is already held', function () {
-    $lock = app(Lock::class);
+        $this->assertFalse($lock->exists('horizon:test-lock'));
+    }
 
-    expect($lock->get('horizon:test-lock', 60))->toBeTrue();
-    expect($lock->get('horizon:test-lock', 60))->toBeFalse();
-});
+    #[Test]
+    public function it_does_not_grant_a_lock_that_is_already_held(): void
+    {
+        $lock = $this->app->make(Lock::class);
 
-it('grants a lock again once it has expired', function () {
-    $lock = app(Lock::class);
+        $this->assertTrue($lock->get('horizon:test-lock', 60));
+        $this->assertFalse($lock->get('horizon:test-lock', 60));
+    }
 
-    expect($lock->get('horizon:test-lock', -1))->toBeTrue();
-    expect($lock->get('horizon:test-lock', 60))->toBeTrue();
-});
+    #[Test]
+    public function it_grants_a_lock_again_once_it_has_expired(): void
+    {
+        $lock = $this->app->make(Lock::class);
 
-it('runs the callback with when the lock is available', function () {
-    $lock = app(Lock::class);
+        $this->assertTrue($lock->get('horizon:test-lock', -1));
+        $this->assertTrue($lock->get('horizon:test-lock', 60));
+    }
 
-    $ran = false;
+    #[Test]
+    public function it_runs_the_callback_when_the_lock_is_available(): void
+    {
+        $lock = $this->app->make(Lock::class);
 
-    $lock->with('horizon:test-lock', function () use (&$ran) {
-        $ran = true;
-    });
+        $ran = false;
 
-    expect($ran)->toBeTrue();
-    expect($lock->exists('horizon:test-lock'))->toBeFalse();
-});
+        $lock->with('horizon:test-lock', function () use (&$ran) {
+            $ran = true;
+        });
+
+        $this->assertTrue($ran);
+        $this->assertFalse($lock->exists('horizon:test-lock'));
+    }
+}
