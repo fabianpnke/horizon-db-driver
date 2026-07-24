@@ -57,7 +57,12 @@ class HorizonDbDriverServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->publishesMigrations([
+            // publishesMigrations() was only added in Laravel 11; fall back to
+            // publishes() on the Laravel 9/10 releases this package still supports.
+            // @phpstan-ignore-next-line function.alreadyNarrowedType (only "always true" against the single Laravel version installed for analysis; this package supports Laravel 9-13)
+            $publishMigrations = method_exists($this, 'publishesMigrations') ? 'publishesMigrations' : 'publishes';
+
+            $this->{$publishMigrations}([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], ['horizon-db-driver', 'horizon-db-driver-migrations']);
 

@@ -53,8 +53,7 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Remove dev tooling unavailable on PHP 8.2
-        if: matrix.php == '8.2'
+      - name: Remove dev tooling incompatible with the compatibility matrix
         run: composer remove laravel/pao --dev --no-update
 
       - name: Install dependencies
