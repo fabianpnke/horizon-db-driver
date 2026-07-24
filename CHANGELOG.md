@@ -1,6 +1,16 @@
 # Release Notes
 
-## [Unreleased](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.0...HEAD)
+## [Unreleased](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.1...HEAD)
+
+## [v1.0.1](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.0...v1.0.1) - 2026-07-24
+
+### Bug Fixes
+
+- Fixed a `TypeError` thrown from `DatabaseSupervisorRepository::longestActiveTimeout()`. Supervisor options are round-tripped through JSON storage, and `json_decode()` could hand back the `timeout` value as a numeric string instead of an int, which violated the method's declared `int` return type. The result is now explicitly cast to `int`.
+
+**Requirements:** PHP ^8.0 · Laravel 9–13 · `laravel/horizon` ^5.0
+
+**Docs:** https://fabianpnke.github.io/horizon-db-driver/
 
 ## [v1.0.0](https://github.com/fabianpnke/horizon-db-driver/compare/v0.1.0...v1.0.0) - 2026-07-24
 
