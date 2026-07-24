@@ -38,3 +38,25 @@ The published `config/horizon.php` stub hardcodes `'connection' => 'redis'` unde
 ## A Redis connection block must still exist
 
 Horizon's own service provider unconditionally calls `Horizon::use()` on boot, which expects `config('database.redis.{connection}')` to exist and throws if it's missing — even though this package never touches Redis. Most Laravel apps ship with a default Redis connection block already, so this is rarely an issue in practice, but if your app has removed it entirely, Horizon won't boot regardless of which driver you're using.
+
+## Running without the Redis PHP extension
+
+If your host has no `ext-redis` at all (not just no Redis server — no *client library* either), `php artisan horizon` itself refuses to start:
+
+```
+The PHP Redis extension is not installed.
+```
+
+This check lives in Horizon's own `HorizonCommand`, not in this package, and it fires based on `config('database.redis.client')` — independent of whether horizon-db-driver is active. It exits with status `0`, not an error code, so process managers (systemd, Supervisor) won't log it as a crash — they'll just see the process exit immediately and, if configured to auto-restart, hit a restart-loop limit (e.g. systemd's `start-limit-hit`) without an obvious cause in the unit status.
+
+Switch to [`predis/predis`](https://github.com/predis/predis), a pure-PHP Redis client that doesn't need the extension:
+
+```bash
+composer require predis/predis
+```
+
+```env
+REDIS_CLIENT=predis
+```
+
+`predis/predis` never needs to actually reach a Redis server for `HorizonCommand`'s check to pass — the check only verifies the client library is installed, not that a connection succeeds.
