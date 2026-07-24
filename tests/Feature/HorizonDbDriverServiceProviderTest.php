@@ -30,29 +30,25 @@ use Laravel\Horizon\Contracts\WorkloadRepository;
 use Laravel\Horizon\Lock;
 use Laravel\Horizon\Repositories\RedisJobRepository;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
-use PHPUnit\Framework\Attributes\Test;
 
 class HorizonDbDriverServiceProviderTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_merges_the_package_config_with_enabled_defaulting_to_true(): void
+    public function test_it_merges_the_package_config_with_enabled_defaulting_to_true(): void
     {
         $this->assertTrue(config('horizon-db-driver.enabled'));
         $this->assertNull(config('horizon-db-driver.connection'));
     }
 
-    #[Test]
-    public function it_publishes_the_migrations_under_the_expected_tags(): void
+    public function test_it_publishes_the_migrations_under_the_expected_tags(): void
     {
         $paths = ServiceProvider::pathsToPublish(HorizonDbDriverServiceProvider::class, 'horizon-db-driver-migrations');
 
         $this->assertNotEmpty($paths);
     }
 
-    #[Test]
-    public function it_rebinds_every_driver_swappable_singleton_to_the_database_implementation_when_enabled(): void
+    public function test_it_rebinds_every_driver_swappable_singleton_to_the_database_implementation_when_enabled(): void
     {
         $this->assertInstanceOf(DatabaseLock::class, $this->app->make(Lock::class));
         $this->assertInstanceOf(DatabaseHorizonCommandQueue::class, $this->app->make(HorizonCommandQueue::class));
@@ -65,8 +61,7 @@ class HorizonDbDriverServiceProviderTest extends TestCase
         $this->assertInstanceOf(DatabaseWorkloadRepository::class, $this->app->make(WorkloadRepository::class));
     }
 
-    #[Test]
-    public function it_registers_the_database_queue_connector(): void
+    public function test_it_registers_the_database_queue_connector(): void
     {
         $manager = $this->app->make(QueueManager::class);
 
@@ -76,9 +71,8 @@ class HorizonDbDriverServiceProviderTest extends TestCase
         $this->assertInstanceOf(DatabaseConnector::class, $connectors['database']());
     }
 
-    #[Test]
     #[DefineEnvironment('disableHorizonDbDriver')]
-    public function it_leaves_horizon_on_its_default_redis_bindings_when_disabled(): void
+    public function test_it_leaves_horizon_on_its_default_redis_bindings_when_disabled(): void
     {
         $this->assertInstanceOf(RedisJobRepository::class, $this->app->make(JobRepository::class));
     }

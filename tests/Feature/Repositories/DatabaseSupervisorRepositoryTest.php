@@ -8,14 +8,12 @@ use HorizonDbDriver\HorizonDbDriver\Repositories\DatabaseSupervisorRepository;
 use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use PHPUnit\Framework\Attributes\Test;
 
 class DatabaseSupervisorRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_stores_and_retrieves_supervisor_information(): void
+    public function test_it_stores_and_retrieves_supervisor_information(): void
     {
         DB::table('horizon_supervisors')->insert([
             'name' => 'horizon-1:supervisor-1',
@@ -38,8 +36,7 @@ class DatabaseSupervisorRepositoryTest extends TestCase
         $this->assertSame(['redis:default' => 1], $found->processes);
     }
 
-    #[Test]
-    public function it_removes_expired_supervisors_from_storage(): void
+    public function test_it_removes_expired_supervisors_from_storage(): void
     {
         DB::table('horizon_supervisors')->insert([
             'name' => 'horizon-1:supervisor-1',
@@ -58,8 +55,7 @@ class DatabaseSupervisorRepositoryTest extends TestCase
         $this->assertFalse(DB::table('horizon_supervisors')->exists());
     }
 
-    #[Test]
-    public function it_forgets_a_supervisor_by_name(): void
+    public function test_it_forgets_a_supervisor_by_name(): void
     {
         DB::table('horizon_supervisors')->insert([
             'name' => 'horizon-1:supervisor-1',

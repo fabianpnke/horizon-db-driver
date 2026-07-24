@@ -7,14 +7,12 @@ namespace HorizonDbDriver\HorizonDbDriver\Tests\Feature;
 use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Horizon\Contracts\HorizonCommandQueue;
-use PHPUnit\Framework\Attributes\Test;
 
 class DatabaseHorizonCommandQueueTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_pushes_and_pops_pending_commands_for_a_queue_name(): void
+    public function test_it_pushes_and_pops_pending_commands_for_a_queue_name(): void
     {
         $queue = $this->app->make(HorizonCommandQueue::class);
 
@@ -33,8 +31,7 @@ class DatabaseHorizonCommandQueueTest extends TestCase
         $this->assertCount(1, $queue->pending('supervisor-2'));
     }
 
-    #[Test]
-    public function it_flushes_the_command_queue_for_a_given_name(): void
+    public function test_it_flushes_the_command_queue_for_a_given_name(): void
     {
         $queue = $this->app->make(HorizonCommandQueue::class);
 

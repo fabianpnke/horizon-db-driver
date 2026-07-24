@@ -14,7 +14,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Horizon\Contracts\JobRepository;
-use PHPUnit\Framework\Attributes\Test;
 
 class HorizonDbDriverTestJob implements ShouldQueue
 {
@@ -30,8 +29,7 @@ class DatabaseQueueProcessingTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_records_a_pushed_job_in_the_horizon_jobs_table(): void
+    public function test_it_records_a_pushed_job_in_the_horizon_jobs_table(): void
     {
         HorizonDbDriverTestJob::dispatch()->onConnection('database');
 
@@ -44,8 +42,7 @@ class DatabaseQueueProcessingTest extends TestCase
         $this->assertSame(1, $this->app->make(JobRepository::class)->countPending());
     }
 
-    #[Test]
-    public function it_marks_the_job_as_reserved_when_popped_off_the_queue(): void
+    public function test_it_marks_the_job_as_reserved_when_popped_off_the_queue(): void
     {
         HorizonDbDriverTestJob::dispatch()->onConnection('database');
 
@@ -58,8 +55,7 @@ class DatabaseQueueProcessingTest extends TestCase
         $this->assertSame('reserved', $row->status);
     }
 
-    #[Test]
-    public function it_marks_the_job_as_completed_once_it_is_deleted_from_the_queue(): void
+    public function test_it_marks_the_job_as_completed_once_it_is_deleted_from_the_queue(): void
     {
         HorizonDbDriverTestJob::dispatch()->onConnection('database');
 

@@ -8,14 +8,12 @@ use HorizonDbDriver\HorizonDbDriver\Repositories\DatabaseTagRepository;
 use HorizonDbDriver\HorizonDbDriver\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use PHPUnit\Framework\Attributes\Test;
 
 class DatabaseTagRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_stores_and_retrieves_job_ids_by_tag(): void
+    public function test_it_stores_and_retrieves_job_ids_by_tag(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
 
@@ -27,8 +25,7 @@ class DatabaseTagRepositoryTest extends TestCase
         $this->assertSame(2, $tags->count('emails'));
     }
 
-    #[Test]
-    public function it_monitors_and_stops_monitoring_tags(): void
+    public function test_it_monitors_and_stops_monitoring_tags(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
 
@@ -42,8 +39,7 @@ class DatabaseTagRepositoryTest extends TestCase
         $this->assertSame([], $tags->monitoring());
     }
 
-    #[Test]
-    public function it_forgets_a_tag_entirely(): void
+    public function test_it_forgets_a_tag_entirely(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
 
@@ -53,8 +49,7 @@ class DatabaseTagRepositoryTest extends TestCase
         $this->assertSame([], $tags->jobs('emails'));
     }
 
-    #[Test]
-    public function it_removes_expired_temporary_tags_from_storage_but_keeps_permanent_ones(): void
+    public function test_it_removes_expired_temporary_tags_from_storage_but_keeps_permanent_ones(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
 

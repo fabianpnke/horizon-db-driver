@@ -13,7 +13,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Horizon\Events\JobFailed as HorizonJobFailed;
-use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Throwable;
 
@@ -31,8 +30,7 @@ class MarshalDatabaseFailedEventTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_marshals_a_failed_database_job_into_a_horizon_job_failed_event(): void
+    public function test_it_marshals_a_failed_database_job_into_a_horizon_job_failed_event(): void
     {
         Event::fake([HorizonJobFailed::class]);
 

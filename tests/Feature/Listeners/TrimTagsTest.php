@@ -12,14 +12,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Horizon\Events\MasterSupervisorLooped;
 use Laravel\Horizon\MasterSupervisor;
-use PHPUnit\Framework\Attributes\Test;
 
 class TrimTagsTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[Test]
-    public function it_trims_expired_tags_once_the_configured_frequency_has_elapsed(): void
+    public function test_it_trims_expired_tags_once_the_configured_frequency_has_elapsed(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
         $tags->add('job-1', ['expired-tag']);
@@ -34,8 +32,7 @@ class TrimTagsTest extends TestCase
         $this->assertFalse(DB::table('horizon_tags')->where('tag', 'expired-tag')->exists());
     }
 
-    #[Test]
-    public function it_does_not_trim_again_before_the_configured_frequency_has_elapsed(): void
+    public function test_it_does_not_trim_again_before_the_configured_frequency_has_elapsed(): void
     {
         $tags = $this->app->make(DatabaseTagRepository::class);
         $tags->add('job-1', ['expired-tag']);
