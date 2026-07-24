@@ -444,7 +444,13 @@ class DatabaseJobRepository implements JobRepository
      */
     protected function updateRetryInformationOnParent(JobPayload $payload, bool $failed): void
     {
-        if ($retries = $this->table()->where('id', $payload->retryOf())->value('retried_by')) {
+        $this->connection()->transaction(function () use ($payload, $failed) {
+            $retries = $this->table()->where('id', $payload->retryOf())->lockForUpdate()->value('retried_by');
+
+            if (! $retries) {
+                return;
+            }
+
             $retries = $this->updateRetryStatus(
                 $payload, json_decode($retries, true), $failed,
             );
@@ -452,7 +458,7 @@ class DatabaseJobRepository implements JobRepository
             $this->table()->where('id', $payload->retryOf())->update([
                 'retried_by' => json_encode($retries),
             ]);
-        }
+        });
     }
 
     /**
@@ -574,19 +580,21 @@ class DatabaseJobRepository implements JobRepository
      */
     public function storeRetryReference(mixed $id, mixed $retryId): void
     {
-        $retries = json_decode(
-            $this->table()->where('id', $id)->value('retried_by') ?: '[]', true,
-        );
+        $this->connection()->transaction(function () use ($id, $retryId) {
+            $retries = json_decode(
+                $this->table()->where('id', $id)->lockForUpdate()->value('retried_by') ?: '[]', true,
+            );
 
-        $retries[] = [
-            'id' => $retryId,
-            'status' => 'pending',
-            'retried_at' => CarbonImmutable::now()->getTimestamp(),
-        ];
+            $retries[] = [
+                'id' => $retryId,
+                'status' => 'pending',
+                'retried_at' => CarbonImmutable::now()->getTimestamp(),
+            ];
 
-        $this->table()->where('id', $id)->update([
-            'retried_by' => json_encode($retries),
-        ]);
+            $this->table()->where('id', $id)->update([
+                'retried_by' => json_encode($retries),
+            ]);
+        });
     }
 
     /**
