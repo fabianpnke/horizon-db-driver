@@ -88,10 +88,7 @@
         "laravel": {
             "providers": [
                 "HorizonDbDriver\\HorizonDbDriver\\HorizonDbDriverServiceProvider"
-            ],
-            "aliases": {
-                "HorizonDbDriver": "HorizonDbDriver\\HorizonDbDriver\\Facades\\HorizonDbDriver"
-            }
+            ]
         }
     },
     "config": {
