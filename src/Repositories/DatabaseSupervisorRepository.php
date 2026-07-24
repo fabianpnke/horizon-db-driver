@@ -93,9 +93,9 @@ class DatabaseSupervisorRepository implements SupervisorRepository
      */
     public function longestActiveTimeout(): int
     {
-        return collect($this->all())->max(function (stdClass $supervisor) {
+        return (int) (collect($this->all())->max(function (stdClass $supervisor) {
             return $supervisor->options['timeout'];
-        }) ?: 0;
+        }) ?: 0);
     }
 
     /**
