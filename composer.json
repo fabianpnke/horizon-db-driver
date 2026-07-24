@@ -1,15 +1,23 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "fabianpnke/horizon-db-driver",
-    "description": "Horizon Db Driver",
+    "description": "A database storage and queue driver for Laravel Horizon, for running Horizon without Redis.",
     "keywords": [
         "laravel",
         "fabianpnke",
-        "horizon-db-driver"
+        "horizon-db-driver",
+        "horizon",
+        "queue",
+        "database"
     ],
     "homepage": "https://github.com/fabianpnke/horizon-db-driver",
     "license": "MIT",
     "authors": [
+        {
+            "name": "Steve Bauman",
+            "homepage": "https://github.com/stevebauman",
+            "role": "Original author (laravel/horizon#1762)"
+        },
         {
             "name": "fabianpnke",
             "email": "fabianpnke@fastmail.de",

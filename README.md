@@ -10,7 +10,17 @@
     <a href="https://packagist.org/packages/fabianpnke/horizon-db-driver"><img src="https://img.shields.io/packagist/dt/fabianpnke/horizon-db-driver.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
-Horizon Db Driver
+A database storage driver for [Laravel Horizon](https://github.com/laravel/horizon), for teams that want Horizon's dashboard and job-monitoring workflow without running Redis. It swaps Horizon's Redis-backed lock, repositories, and command queue for SQL-table-backed equivalents, and registers a `database` queue connector that emits the same Horizon events the Redis connector does.
+
+This package does not fork or modify Horizon — it requires the official `laravel/horizon` package and layers a second service provider on top that rebinds the relevant container singletons after Horizon's own provider has registered them.
+
+## Origin
+
+All of the database driver logic in this package — the repositories, the lock, the command queue, the queue connector, the migration — is [Steve Bauman](https://github.com/stevebauman)'s work from [laravel/horizon#1762](https://github.com/laravel/horizon/pull/1762), a pull request against Horizon itself. Taylor Otwell closed it with:
+
+> While I respect the effort and the idea, I don't personally want to be responsible for maintaining a DB version of Horizon right now. I think it could be a cool community package / fork though!
+
+This package is that community package: Steve's implementation adapted to run alongside the official `laravel/horizon` package via container bindings, instead of as a fork of it.
 
 ## Installation
 
@@ -20,48 +30,53 @@ You can install the package via Composer:
 composer require fabianpnke/horizon-db-driver
 ```
 
-You may publish all of the package's resources at once:
+This package requires `laravel/horizon` to already be installed and configured (see [Horizon's own installation docs](https://laravel.com/docs/horizon#installation)).
 
-```bash
-php artisan vendor:publish --tag="horizon-db-driver"
-```
-
-Or, you may publish each resource individually:
-
-### Publishing the Configuration File
-
-```bash
-php artisan vendor:publish --tag="horizon-db-driver-config"
-```
-
-### Publishing and Running the Migrations
+Publish and run the migrations:
 
 ```bash
 php artisan vendor:publish --tag="horizon-db-driver-migrations"
 php artisan migrate
 ```
 
-### Publishing the Views
+The migration creates the `horizon_jobs`, `horizon_tags`, `horizon_monitored_tags`, `horizon_supervisors`, `horizon_master_supervisors`, `horizon_processes`, `horizon_metrics`, `horizon_metric_snapshots`, `horizon_metric_meta`, `horizon_command_queue`, and `horizon_locks` tables.
+
+You may also publish the config file:
 
 ```bash
-php artisan vendor:publish --tag="horizon-db-driver-views"
-```
-
-### Publishing the Translations
-
-```bash
-php artisan vendor:publish --tag="horizon-db-driver-lang"
-```
-
-### Publishing the Public Assets
-
-```bash
-php artisan vendor:publish --tag="horizon-db-driver-assets"
+php artisan vendor:publish --tag="horizon-db-driver-config"
 ```
 
 ## Usage
 
-<!-- Add a basic usage example here. -->
+Once installed, the package is active by default — Horizon's Redis-backed lock, repositories, and command queue are replaced with database-backed implementations, and a `database` queue connector is registered.
+
+Point at least one of your `config/queue.php` connections at that connector so Horizon has jobs to work:
+
+```php
+'connections' => [
+    'database' => [
+        'driver' => 'database',
+        'table' => 'jobs',
+        'queue' => 'default',
+        'retry_after' => 90,
+    ],
+],
+```
+
+> **Note:** enabling this package makes *every* queue connection configured with driver `database` — not just the one(s) Horizon supervises — emit Horizon's job lifecycle events. This matches the upstream `database` connector name so behavior is a drop-in replacement, but it does mean a plain, non-Horizon `database` queue connection in the same app will also start showing up in Horizon's dashboard.
+
+No Horizon config changes are required — this package doesn't read Horizon's own `config/horizon.php`, it activates based on its own `enabled` flag (default `true`). To turn it off per-environment without removing the package:
+
+```env
+HORIZON_DB_DRIVER_ENABLED=false
+```
+
+By default the package uses your application's default database connection. To point it at a different one:
+
+```env
+HORIZON_DB_DRIVER_CONNECTION=horizon
+```
 
 ## Changelog
 
@@ -77,6 +92,7 @@ Please review [our security policy](.github/SECURITY.md) on how to report securi
 
 ## Credits
 
+- [Steve Bauman](https://github.com/stevebauman) — original author of the database driver implementation this package is built on, from [laravel/horizon#1762](https://github.com/laravel/horizon/pull/1762)
 - [fabianpnke](https://github.com/fabianpnke)
 - [All Contributors](../../contributors)
 
