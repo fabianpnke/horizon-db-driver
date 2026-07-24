@@ -14,6 +14,8 @@ A database storage driver for [Laravel Horizon](https://github.com/laravel/horiz
 
 This package does not fork or modify Horizon — it requires the official `laravel/horizon` package and layers a second service provider on top that rebinds the relevant container singletons after Horizon's own provider has registered them.
 
+📚 Full documentation is available at **https://fabianpnke.github.io/horizon-db-driver/**.
+
 ## Origin
 
 All of the database driver logic in this package — the repositories, the lock, the command queue, the queue connector, the migration — is [Steve Bauman](https://github.com/stevebauman)'s work from [laravel/horizon#1762](https://github.com/laravel/horizon/pull/1762), a pull request against Horizon itself. Taylor Otwell closed it with:
