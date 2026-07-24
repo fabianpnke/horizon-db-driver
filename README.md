@@ -78,6 +78,14 @@ By default the package uses your application's default database connection. To p
 HORIZON_DB_DRIVER_CONNECTION=horizon
 ```
 
+### Notes when switching from Redis
+
+Horizon itself still assumes a few Redis-specific defaults, independent of which storage driver is active:
+
+- `config('horizon.waits')` keys are formatted `"{connection}:{queue}"` and default to `redis:default`. Add an entry keyed with your database queue connection's name (e.g. `database:default`) if you want accurate "long wait detected" notifications.
+- The published `config/horizon.php` stub hardcodes `'connection' => 'redis'` under `defaults.supervisor-1`. Change it to your database queue connection's name so your supervisors actually work the right queue.
+- Horizon's own service provider unconditionally calls `Horizon::use()` on boot, which expects `config('database.redis.{connection}')` to exist and throws if it's missing — even though this package never touches Redis. Most Laravel apps ship with a default Redis connection block already, so this is rarely an issue in practice, but if your app has removed it entirely, Horizon won't boot regardless of which driver you're using.
+
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
