@@ -61,4 +61,25 @@ class DatabaseTagRepositoryTest extends TestCase
         $this->assertTrue(DB::table('horizon_tags')->where('tag', 'permanent')->exists());
         $this->assertFalse(DB::table('horizon_tags')->where('tag', 'expired')->exists());
     }
+
+    public function test_it_batches_the_deletion_of_expired_tags_beyond_a_single_batch_size(): void
+    {
+        $expiresAt = now()->subMinute()->getTimestamp();
+
+        $rows = collect(range(1, 1500))->map(fn (int $i) => [
+            'tag' => "expired-{$i}",
+            'job_id' => "job-{$i}",
+            'created_at' => microtime(true),
+            'expires_at' => $expiresAt,
+        ])->all();
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('horizon_tags')->insert($chunk);
+        }
+
+        $tags = $this->app->make(DatabaseTagRepository::class);
+        $tags->trimExpired();
+
+        $this->assertSame(0, DB::table('horizon_tags')->count());
+    }
 }

@@ -192,10 +192,13 @@ class DatabaseTagRepository implements TagRepository
      */
     public function trimExpired(): void
     {
-        $this->table()
+        $query = $this->table()
             ->whereNotNull('expires_at')
-            ->where('expires_at', '<', CarbonImmutable::now()->getTimestamp())
-            ->delete();
+            ->where('expires_at', '<', CarbonImmutable::now()->getTimestamp());
+
+        do {
+            $deleted = $query->limit(1000)->delete();
+        } while ($deleted !== 0);
     }
 
     /**
