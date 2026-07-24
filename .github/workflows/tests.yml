@@ -53,6 +53,10 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Remove dev tooling unavailable on PHP 8.2
+        if: matrix.php == '8.2'
+        run: composer remove laravel/pao --dev --no-update
+
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
