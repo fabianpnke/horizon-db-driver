@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace HorizonDbDriver\HorizonDbDriver\Repositories;
 
 use Carbon\CarbonImmutable;
+use HorizonDbDriver\HorizonDbDriver\Concerns\InteractsWithTransactions;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Query\Builder;
@@ -18,6 +19,8 @@ use Throwable;
 
 class DatabaseJobRepository implements JobRepository
 {
+    use InteractsWithTransactions;
+
     /**
      * The database connection resolver instance.
      */
@@ -444,7 +447,7 @@ class DatabaseJobRepository implements JobRepository
      */
     protected function updateRetryInformationOnParent(JobPayload $payload, bool $failed): void
     {
-        $this->connection()->transaction(function () use ($payload, $failed) {
+        $this->transaction(function () use ($payload, $failed) {
             $retries = $this->table()->where('id', $payload->retryOf())->lockForUpdate()->value('retried_by');
 
             if (! $retries) {
@@ -580,7 +583,7 @@ class DatabaseJobRepository implements JobRepository
      */
     public function storeRetryReference(mixed $id, mixed $retryId): void
     {
-        $this->connection()->transaction(function () use ($id, $retryId) {
+        $this->transaction(function () use ($id, $retryId) {
             $retries = json_decode(
                 $this->table()->where('id', $id)->lockForUpdate()->value('retried_by') ?: '[]', true,
             );

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace HorizonDbDriver\HorizonDbDriver;
 
+use HorizonDbDriver\HorizonDbDriver\Concerns\InteractsWithTransactions;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Query\Builder;
@@ -12,6 +13,8 @@ use stdClass;
 
 class DatabaseHorizonCommandQueue implements HorizonCommandQueue
 {
+    use InteractsWithTransactions;
+
     /**
      * The database connection resolver instance.
      */
@@ -50,26 +53,44 @@ class DatabaseHorizonCommandQueue implements HorizonCommandQueue
      */
     public function pending(mixed $name): array
     {
-        return $this->connection()->transaction(function () use ($name) {
-            $records = $this->table()
-                ->where('name', $name)
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
+        // Supervisors ask for their pending commands every second, and the
+        // queue is empty almost every time. Checking for commands before
+        // opening a transaction keeps that loop off the locking path.
+        if (! $this->table()->where('name', $name)->exists()) {
+            return [];
+        }
 
-            if ($records->isEmpty()) {
-                return [];
-            }
-
-            $this->table()->whereIn('id', $records->pluck('id')->all())->delete();
-
-            return $records->map(function (stdClass $record) {
-                return (object) [
-                    'command' => $record->command,
-                    'options' => json_decode((string) $record->options, true),
-                ];
-            })->all();
+        return $this->transaction(function () use ($name) {
+            return $this->drain($name);
         });
+    }
+
+    /**
+     * Take the pending commands for a given queue name off the queue.
+     *
+     * @param  string  $name
+     * @return array<int, object{command: string, options: mixed}>
+     */
+    protected function drain(mixed $name): array
+    {
+        $records = $this->table()
+            ->where('name', $name)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        if ($records->isEmpty()) {
+            return [];
+        }
+
+        $this->table()->whereIn('id', $records->pluck('id')->all())->delete();
+
+        return $records->map(function (stdClass $record) {
+            return (object) [
+                'command' => $record->command,
+                'options' => json_decode((string) $record->options, true),
+            ];
+        })->all();
     }
 
     /**

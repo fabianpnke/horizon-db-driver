@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace HorizonDbDriver\HorizonDbDriver\Repositories;
 
 use Carbon\CarbonImmutable;
+use HorizonDbDriver\HorizonDbDriver\Concerns\InteractsWithTransactions;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Query\Builder;
@@ -16,6 +17,8 @@ use stdClass;
 
 class DatabaseMetricsRepository implements MetricsRepository
 {
+    use InteractsWithTransactions;
+
     /**
      * The database connection resolver instance.
      */
@@ -330,7 +333,7 @@ class DatabaseMetricsRepository implements MetricsRepository
      */
     protected function baseSnapshotData(string $key, string $type): array
     {
-        return $this->connection()->transaction(function () use ($key) {
+        return $this->transaction(function () use ($key) {
             $record = $this->metricsTable()->where('key', $key)->lockForUpdate()->first();
 
             $data = [
