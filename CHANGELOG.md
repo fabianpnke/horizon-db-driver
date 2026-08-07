@@ -1,6 +1,17 @@
 # Release Notes
 
-## [Unreleased](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.1...HEAD)
+## [Unreleased](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.2...HEAD)
+
+## [v1.0.2](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.1...v1.0.2) - 2026-08-07
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+### What's Changed
+
+#### Bug fixes
+
+* fix: recover from transactions left open on the connection by @fabianpnke in https://github.com/fabianpnke/horizon-db-driver/pull/5
+
+**Full Changelog**: https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.1...v1.0.2
 
 ## [v1.0.1](https://github.com/fabianpnke/horizon-db-driver/compare/v1.0.0...v1.0.1) - 2026-07-24
 
